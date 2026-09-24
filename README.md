@@ -8,7 +8,7 @@ Takes about two minutes. You need WebStorm (or another JetBrains IDE) **2026.1 o
 
 **1. Download the plugin file**
 
-Open **[Releases → v0.1.0](https://github.com/Extrik808/sf-cloud-plugin/releases/tag/v0.1.0)** (you must be signed in to GitHub — the repository is private) and under **Assets** click **`sf-cloud-plugin-0.1.0.zip`**. Keep it as a zip — do not unpack it.
+Open **[Releases → v0.1.0](https://github.com/Extrik808/sf-cloud-plugin/releases/tag/v0.1.0)** and under **Assets** click **`sf-cloud-plugin-0.1.0.zip`**. Keep it as a zip — do not unpack it.
 
 **2. Turn off Illuminated Cloud 2** — skip this step if you never installed it
 
@@ -34,7 +34,6 @@ Download the new zip and repeat steps 3 and 4. The old version is replaced autom
 
 | Problem                                           | Fix                                                                                                |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| The release page shows **404**                    | You are not signed in to GitHub with the account that has access to this private repository        |
 | **"Plugin is incompatible"** on install           | The IDE is older than 2026.1 — update it (**Help → Check for Updates**)                            |
 | `.cls` files open with the wrong highlighting     | Illuminated Cloud 2 is still enabled — do step 2 and restart                                       |
 | No orgs in the status bar widget                  | The Salesforce CLI is not found — install `sf`, or set its path in **Settings → Tools → SF Cloud** |
