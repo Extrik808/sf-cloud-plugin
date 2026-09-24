@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templateSet group="SF Cloud LWC">
+  <template name="sd" value="console.log('$END$');" description="console.log('...')" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="apex" value="import $NAME$ from '@salesforce/apex/$CLASS$.$METHOD$';$END$" description="import an @AuraEnabled Apex method" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="CLASS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="METHOD" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="wire" value="@wire($ADAPTER$, { $PARAMS$ })&#10;$NAME$;$END$" description="@wire property" toReformat="true" toShortenFQNames="false">
+    <variable name="ADAPTER" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="PARAMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="wirem" value="@wire($ADAPTER$, { $PARAMS$ })&#10;$NAME$({ data, error }) {&#10;    if (data) {&#10;        $END$&#10;    } else if (error) {&#10;        console.error(error);&#10;    }&#10;}" description="@wire function" toReformat="true" toShortenFQNames="false">
+    <variable name="ADAPTER" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="PARAMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="&quot;wired&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="api" value="@api $NAME$;$END$" description="@api property" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="track" value="@track $NAME$;$END$" description="@track property" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="label" value="import $NAME$ from '@salesforce/label/c.$LABEL$';$END$" description="import a custom label" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="LABEL" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="toast" value="this.dispatchEvent(&#10;    new ShowToastEvent({ title: '$TITLE$', message: '$MESSAGE$', variant: '$VARIANT$' }),&#10;);$END$" description="ShowToastEvent" toReformat="true" toShortenFQNames="false">
+    <variable name="TITLE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="MESSAGE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="VARIANT" expression="" defaultValue="&quot;success&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="event" value="this.dispatchEvent(new CustomEvent('$NAME$', { detail: $DETAIL$ }));$END$" description="dispatch a CustomEvent" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="DETAIL" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="call" value="$METHOD$({ $PARAMS$ })&#10;    .then((result) =&gt; {&#10;        $END$&#10;    })&#10;    .catch((error) =&gt; {&#10;        console.error(error);&#10;    });" description="imperative Apex call" toReformat="true" toShortenFQNames="false">
+    <variable name="METHOD" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="PARAMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_JS" value="true"/>
+    </context>
+  </template>
+  <template name="lif" value="&lt;template lwc:if={$CONDITION$}&gt;&#10;    $END$&#10;&lt;/template&gt;" description="lwc:if block" toReformat="true" toShortenFQNames="false">
+    <variable name="CONDITION" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+  <template name="lfor" value="&lt;template for:each={$ITEMS$} for:item=&quot;$ITEM$&quot;&gt;&#10;    &lt;div key={$ITEM$.Id}&gt;$END$&lt;/div&gt;&#10;&lt;/template&gt;" description="for:each block" toReformat="true" toShortenFQNames="false">
+    <variable name="ITEMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="ITEM" expression="" defaultValue="&quot;item&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+  <template name="card" value="&lt;lightning-card title=&quot;$TITLE$&quot;&gt;&#10;    $END$&#10;&lt;/lightning-card&gt;" description="lightning-card" toReformat="true" toShortenFQNames="false">
+    <variable name="TITLE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+  <template name="btn" value="&lt;lightning-button label=&quot;$LABEL$&quot; onclick={$HANDLER$}&gt;&lt;/lightning-button&gt;$END$" description="lightning-button" toReformat="true" toShortenFQNames="false">
+    <variable name="LABEL" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="HANDLER" expression="" defaultValue="&quot;handleClick&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+  <template name="input" value="&lt;lightning-input label=&quot;$LABEL$&quot; value={$VALUE$} onchange={$HANDLER$}&gt;&lt;/lightning-input&gt;$END$" description="lightning-input" toReformat="true" toShortenFQNames="false">
+    <variable name="LABEL" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="VALUE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="HANDLER" expression="" defaultValue="&quot;handleChange&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+  <template name="spinner" value="&lt;template lwc:if={$LOADING$}&gt;&#10;    &lt;lightning-spinner alternative-text=&quot;Loading&quot;&gt;&lt;/lightning-spinner&gt;&#10;&lt;/template&gt;$END$" description="lightning-spinner while loading" toReformat="true" toShortenFQNames="false">
+    <variable name="LOADING" expression="" defaultValue="&quot;isLoading&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_LWC_HTML" value="true"/>
+    </context>
+  </template>
+</templateSet>

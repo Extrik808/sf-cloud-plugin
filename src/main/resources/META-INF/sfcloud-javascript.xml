@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="JavaScript">
+        <moduleReferenceContributor implementation="dev.sfcloud.lang.javascript.LwcModuleReferenceContributor"/>
+    </extensions>
+</idea-plugin>

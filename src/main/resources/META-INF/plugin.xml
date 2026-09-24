@@ -1,0 +1,388 @@
+<idea-plugin>
+    <id>dev.sfcloud</id>
+    <name>SF Cloud</name>
+    <vendor>Igor Fedkovich</vendor>
+    <description><![CDATA[
+Salesforce development for JetBrains IDEs, built on the Salesforce CLI and Salesforce's Apex language server.
+<ul>
+  <li>Apex syntax highlighting, completion, navigation and error checking</li>
+  <li>LWC completion through the LWC language server</li>
+  <li>Org switcher in the status bar, browser login and org opening</li>
+  <li>Deploy, retrieve and delete with a metadata scope dialog that shows local-only and server-only components</li>
+  <li>Problems view, deploy on save, compare with server, push and pull of tracked changes</li>
+  <li>Apex tests from the gutter with the standard test runner UI and coverage highlighting</li>
+  <li>Anonymous Apex, SOQL Query and SOSL Query tool windows with tabbed documents</li>
+  <li>Log Analyzer with raw and tree views, profiling views, trace flags and debug levels</li>
+</ul>
+]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lsp</depends>
+    <depends>com.intellij.modules.xml</depends>
+    <depends optional="true" config-file="sfcloud-javascript.xml">JavaScript</depends>
+    <depends optional="true" config-file="sfcloud-ai-assistant.xml">com.intellij.ml.llm</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <fileEditorProvider implementation="dev.sfcloud.editor.BundleFileEditorProvider"/>
+        <liveTemplateContext contextId="SF_APEX" implementation="dev.sfcloud.lang.ApexTemplateContextType"/>
+        <liveTemplateContext contextId="SF_LWC_JS" implementation="dev.sfcloud.lang.LwcJsTemplateContextType"/>
+        <liveTemplateContext contextId="SF_LWC_HTML" implementation="dev.sfcloud.lang.LwcHtmlTemplateContextType"/>
+        <defaultLiveTemplates file="/liveTemplates/SfCloudApex"/>
+        <defaultLiveTemplates file="/liveTemplates/SfCloudLwc"/>
+        <fileType name="Apex" language="Apex" implementationClass="dev.sfcloud.lang.ApexFileType"
+                  fieldName="INSTANCE" extensions="cls"/>
+        <fileType name="Apex Trigger" implementationClass="dev.sfcloud.lang.ApexTriggerFileType"
+                  fieldName="INSTANCE" extensions="trigger"/>
+        <fileType name="Anonymous Apex" implementationClass="dev.sfcloud.lang.AnonymousApexFileType"
+                  fieldName="INSTANCE" extensions="apex"/>
+        <lang.parserDefinition language="Apex" implementationClass="dev.sfcloud.lang.ApexParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Apex" implementationClass="dev.sfcloud.lang.ApexSyntaxHighlighterFactory"/>
+        <lang.commenter language="Apex" implementationClass="dev.sfcloud.lang.ApexCommenter"/>
+        <lang.braceMatcher language="Apex" implementationClass="dev.sfcloud.lang.ApexBraceMatcher"/>
+        <colorSettingsPage implementation="dev.sfcloud.lang.ApexColorSettingsPage"/>
+        <lang.psiStructureViewFactory language="Apex" implementationClass="dev.sfcloud.lang.ApexStructureViewFactory"/>
+        <methodNavigationOffsetProvider implementation="dev.sfcloud.lang.ApexMethodNavigationOffsetProvider"/>
+        <lang.findUsagesProvider language="Apex" implementationClass="dev.sfcloud.lang.ApexFindUsagesProvider"/>
+        <referencesSearch implementation="dev.sfcloud.lang.ApexReferencesSearcher"/>
+        <vetoRenameCondition implementation="dev.sfcloud.lang.ApexRenameVeto"/>
+        <codeInsight.daemonBoundCodeVisionProvider implementation="dev.sfcloud.lang.ApexUsagesCodeVisionProvider"/>
+        <completion.contributor language="Apex" order="first" implementationClass="dev.sfcloud.lang.ApexCompletionContributor"/>
+        <lang.documentationProvider language="Apex" implementationClass="dev.sfcloud.lang.ApexDocumentationProvider"/>
+        <codeInsight.parameterInfo language="Apex" implementationClass="dev.sfcloud.lang.ApexParameterInfoHandler"/>
+        <additionalLibraryRootsProvider implementation="dev.sfcloud.ost.OfflineSymbolTableLibraryProvider"/>
+        <postStartupActivity implementation="dev.sfcloud.ost.OfflineSymbolTableStartup"/>
+
+        <fileType name="SOQL" language="SOQL" implementationClass="dev.sfcloud.lang.SoqlFileType"
+                  fieldName="INSTANCE" extensions="soql"/>
+        <fileType name="SOSL" language="SOSL" implementationClass="dev.sfcloud.lang.SoslFileType"
+                  fieldName="INSTANCE" extensions="sosl"/>
+        <lang.parserDefinition language="SOQL" implementationClass="dev.sfcloud.lang.SoqlParserDefinition"/>
+        <lang.parserDefinition language="SOSL" implementationClass="dev.sfcloud.lang.SoslParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="SOQL" implementationClass="dev.sfcloud.lang.QuerySyntaxHighlighterFactory"/>
+        <lang.syntaxHighlighterFactory language="SOSL" implementationClass="dev.sfcloud.lang.QuerySyntaxHighlighterFactory"/>
+        <completion.contributor language="SOQL" implementationClass="dev.sfcloud.lang.SoqlCompletionContributor"/>
+        <completion.contributor language="SOSL" implementationClass="dev.sfcloud.lang.SoqlCompletionContributor"/>
+        <runLineMarkerContributor language="Apex" implementationClass="dev.sfcloud.repl.ReplRunLineMarkerContributor"/>
+        <runLineMarkerContributor language="SOQL" implementationClass="dev.sfcloud.repl.ReplRunLineMarkerContributor"/>
+        <runLineMarkerContributor language="SOSL" implementationClass="dev.sfcloud.repl.ReplRunLineMarkerContributor"/>
+        <intentionAction>
+            <language>Apex</language>
+            <className>dev.sfcloud.repl.ExecuteSelectionIntention</className>
+            <category>SF Cloud</category>
+        </intentionAction>
+        <intentionAction>
+            <className>dev.sfcloud.repl.ExecuteQueryIntention</className>
+            <category>SF Cloud</category>
+        </intentionAction>
+
+        <fileType name="Apex Debug Log" language="ApexLog" implementationClass="dev.sfcloud.log.ApexLogFileType"
+                  fieldName="INSTANCE"/>
+        <fileTypeOverrider implementation="dev.sfcloud.log.ApexLogFileTypeOverrider"/>
+        <lang.parserDefinition language="ApexLog" implementationClass="dev.sfcloud.log.ApexLogParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="ApexLog" implementationClass="dev.sfcloud.log.ApexLogSyntaxHighlighterFactory"/>
+        <colorSettingsPage implementation="dev.sfcloud.log.ApexLogColorSettingsPage"/>
+        <lang.psiStructureViewFactory language="ApexLog" implementationClass="dev.sfcloud.log.ApexLogStructureViewFactory"/>
+        <methodNavigationOffsetProvider implementation="dev.sfcloud.log.ApexLogMethodNavigationOffsetProvider"/>
+        <consoleFilterProvider implementation="dev.sfcloud.log.ApexConsoleFilterProvider"/>
+
+        <platform.lsp.serverSupportProvider implementation="dev.sfcloud.lsp.ApexLspServerSupportProvider"/>
+        <platform.lsp.serverSupportProvider implementation="dev.sfcloud.lsp.LwcLspServerSupportProvider"/>
+        <completion.contributor language="any" implementationClass="dev.sfcloud.lang.LwcTemplateCompletionContributor"/>
+        <completion.contributor language="any" implementationClass="dev.sfcloud.lang.SalesforceModuleCompletionContributor"/>
+        <xml.elementDescriptorProvider implementation="dev.sfcloud.lang.LwcTagDescriptorProvider"/>
+        <xml.attributeDescriptorsProvider implementation="dev.sfcloud.lang.LwcAttributeDescriptorsProvider"/>
+        <gotoDeclarationHandler implementation="dev.sfcloud.lang.LwcGotoDeclarationHandler"/>
+        <gotoDeclarationHandler implementation="dev.sfcloud.lang.LwcImportGotoDeclarationHandler" order="first"/>
+
+        <projectConfigurable parentId="language" instance="dev.sfcloud.settings.SfCloudConfigurable"
+                             id="dev.sfcloud.settings" displayName="SF Cloud" nonDefaultProject="true"/>
+        <statusBarWidgetFactory id="SfCloud.OrgWidget" implementation="dev.sfcloud.org.OrgStatusBarWidgetFactory"
+                                order="after CodeStyleStatusBarWidget, before ReadOnlyAttribute"/>
+
+        <externalAnnotator language="Apex" implementationClass="dev.sfcloud.deploy.DeployProblemsAnnotator"/>
+
+        <configurationType implementation="dev.sfcloud.tests.ApexTestConfigurationType"/>
+        <runConfigurationProducer implementation="dev.sfcloud.tests.ApexTestRunConfigurationProducer"/>
+        <programRunner implementation="dev.sfcloud.tests.ApexCoverageProgramRunner"/>
+        <runLineMarkerContributor language="Apex" implementationClass="dev.sfcloud.tests.ApexTestRunLineMarkerContributor"/>
+
+        <toolWindow id="Anonymous Apex" anchor="bottom" icon="/icons/anonymousApex.svg" order="before SOQL Query"
+                    factoryClass="dev.sfcloud.repl.AnonymousApexToolWindowFactory"
+                    canCloseContents="true" doNotActivateOnStart="true"/>
+        <toolWindow id="SOQL Query" anchor="bottom" icon="AllIcons.Nodes.DataSchema" order="after Anonymous Apex"
+                    factoryClass="dev.sfcloud.repl.SoqlQueryToolWindowFactory"
+                    canCloseContents="true" doNotActivateOnStart="true"/>
+        <toolWindow id="SOSL Query" anchor="bottom" icon="AllIcons.Actions.Search" order="after SOQL Query"
+                    factoryClass="dev.sfcloud.repl.SoslQueryToolWindowFactory"
+                    canCloseContents="true" doNotActivateOnStart="true"/>
+        <toolWindow id="Log Analyzer" anchor="bottom" icon="AllIcons.Nodes.LogFolder" order="after SOSL Query"
+                    factoryClass="dev.sfcloud.log.LogAnalyzerToolWindowFactory"
+                    canCloseContents="true" doNotActivateOnStart="true"/>
+        <toolWindow id="Code Coverage" anchor="bottom" icon="AllIcons.General.InspectionsOK" order="after Log Analyzer"
+                    factoryClass="dev.sfcloud.tests.CoverageWindowFactory"
+                    canCloseContents="false" doNotActivateOnStart="true"/>
+        <toolWindow id="SF Cloud" anchor="bottom" icon="/icons/toolWindow.svg"
+                    factoryClass="dev.sfcloud.deploy.ProblemsWindowFactory"
+                    canCloseContents="true" doNotActivateOnStart="true"/>
+
+        <notificationGroup id="SF Cloud" displayType="BALLOON"/>
+        <notificationGroup id="SF Cloud Anonymous Apex" displayType="TOOL_WINDOW" toolWindowId="Anonymous Apex" isLogByDefault="false"/>
+        <notificationGroup id="SF Cloud SOQL Query" displayType="TOOL_WINDOW" toolWindowId="SOQL Query" isLogByDefault="false"/>
+        <notificationGroup id="SF Cloud SOSL Query" displayType="TOOL_WINDOW" toolWindowId="SOSL Query" isLogByDefault="false"/>
+        <notificationGroup id="SF Cloud Log Analyzer" displayType="TOOL_WINDOW" toolWindowId="Log Analyzer" isLogByDefault="false"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="dev.sfcloud.deploy.DeployOnSaveListener"
+                  topic="com.intellij.openapi.actionSystem.ex.AnActionListener"/>
+    </applicationListeners>
+
+    <projectListeners>
+        <listener class="dev.sfcloud.tests.CoverageEditorListener"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
+
+    <actions>
+        <group id="SfCloud.NewGroup" text="Salesforce" description="Creates Salesforce metadata files" popup="true"
+               icon="/icons/toolWindow.svg">
+            <action id="SfCloud.NewApexClass" class="dev.sfcloud.metadata.CreateApexClassAction" text="Apex Class"
+                    description="Creates an Apex class and its metadata file" icon="/icons/apex.svg"/>
+            <action id="SfCloud.NewApexTestClass" class="dev.sfcloud.metadata.CreateApexTestClassAction"
+                    text="Apex Test Class" description="Creates an @IsTest Apex class and its metadata file"
+                    icon="/icons/validator.svg"/>
+            <action id="SfCloud.NewApexTrigger" class="dev.sfcloud.metadata.CreateApexTriggerAction" text="Apex Trigger"
+                    description="Creates an Apex trigger and its metadata file" icon="/icons/trigger.svg"/>
+            <separator/>
+            <action id="SfCloud.NewLwc" class="dev.sfcloud.metadata.CreateLwcAction" text="Lightning Web Component"
+                    description="Creates an LWC bundle" icon="AllIcons.FileTypes.JavaScript"/>
+            <action id="SfCloud.NewAura" class="dev.sfcloud.metadata.CreateAuraAction" text="Aura Component"
+                    description="Creates an Aura bundle" icon="AllIcons.FileTypes.Xml"/>
+            <separator/>
+            <action id="SfCloud.NewVisualforcePage" class="dev.sfcloud.metadata.CreateVisualforcePageAction"
+                    text="Visualforce Page" description="Creates a Visualforce page and its metadata file"
+                    icon="AllIcons.FileTypes.Html"/>
+            <action id="SfCloud.NewVisualforceComponent" class="dev.sfcloud.metadata.CreateVisualforceComponentAction"
+                    text="Visualforce Component" description="Creates a Visualforce component and its metadata file"
+                    icon="AllIcons.FileTypes.Html"/>
+            <add-to-group group-id="NewGroup" anchor="last"/>
+        </group>
+        <action id="SfCloud.ForceSave" class="dev.sfcloud.metadata.ForceSaveAction" text="Force Save"
+                description="Performs an immediate deployment of the selected SF Cloud file(s)" icon="AllIcons.Actions.MenuSaveall">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt F12"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt F12" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt F12" replace-all="true"/>
+        </action>
+        <action id="SfCloud.ForceValidate" class="dev.sfcloud.metadata.ForceValidateAction" text="Force Validate"
+                description="Performs an immediate check-only deployment on the selected SF Cloud file(s)" icon="/icons/validator.svg"/>
+        <action id="SfCloud.DeployModifiedMetadata" class="dev.sfcloud.metadata.DeployModifiedMetadataAction" text="Deploy Modified Metadata..."
+                description="Deploys modified metadata to Salesforce" icon="AllIcons.RunConfigurations.TestState.Run">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt F9"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt F9" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt F9" replace-all="true"/>
+        </action>
+        <action id="SfCloud.DeployAllMetadata" class="dev.sfcloud.metadata.DeployAllMetadataAction" text="Deploy All Metadata..."
+                description="Deploys all metadata to Salesforce" icon="AllIcons.RunConfigurations.TestState.Run_run">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt F10"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt F10" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt F10" replace-all="true"/>
+        </action>
+        <action id="SfCloud.Retrieve" class="dev.sfcloud.metadata.RetrieveMetadataAction" text="Retrieve Metadata..."
+                description="Retrieves metadata from Salesforce" icon="AllIcons.Actions.Diff">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt Y"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt Y" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt Y" replace-all="true"/>
+        </action>
+        <action id="SfCloud.Refresh" class="dev.sfcloud.metadata.RefreshMetadataAction" text="Refresh Metadata..."
+                description="Refreshes metadata from Salesforce" icon="AllIcons.Actions.Refresh">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt R"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt R" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt R" replace-all="true"/>
+        </action>
+        <action id="SfCloud.CompareWithServer" class="dev.sfcloud.metadata.CompareWithServerAction" text="Compare With Server"
+                description="Compares the selected metadata with its Salesforce counterpart" icon="AllIcons.Actions.DiagramDiff">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt EQUALS"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt EQUALS" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt EQUALS" replace-all="true"/>
+        </action>
+        <action id="SfCloud.CompareWithOtherServer" class="dev.sfcloud.metadata.CompareWithOtherServerAction" text="Compare With..."
+                description="Compares the selected metadata with its Salesforce counterpart in a selected organization" icon="AllIcons.Actions.Diff">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt MINUS"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt MINUS" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt MINUS" replace-all="true"/>
+        </action>
+        <action id="SfCloud.Delete" class="dev.sfcloud.metadata.DeleteMetadataAction" text="Delete Metadata..."
+                description="Deletes metadata from Salesforce" icon="AllIcons.Actions.Cancel">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt D"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt D" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt D" replace-all="true"/>
+        </action>
+        <action id="SfCloud.Push" class="dev.sfcloud.metadata.PushMetadataAction" text="Push Metadata"
+                description="Pushes metadata to Salesforce" icon="AllIcons.Actions.Upload"/>
+        <action id="SfCloud.Pull" class="dev.sfcloud.metadata.PullMetadataAction" text="Pull Metadata"
+                description="Pulls metadata from Salesforce" icon="AllIcons.Actions.Download"/>
+        <action id="SfCloud.ToggleDeployOnSave" class="dev.sfcloud.deploy.ToggleDeployOnSaveAction"
+                text="Deploy on Save" description="Deploy source files automatically when they are saved"/>
+        <action id="SfCloud.ToggleCoverage" class="dev.sfcloud.tests.ToggleCoverageAction"
+                text="Show Apex Coverage" description="Highlight covered and uncovered lines from the last test run"/>
+        <action id="SfCloud.ClearCoverage" class="dev.sfcloud.tests.ClearCoverageAction"
+                text="Clear Apex Coverage" description="Remove Apex coverage highlighting"/>
+        <action id="SfCloud.AnonymousApex" class="dev.sfcloud.repl.ShowAnonymousApexAction" text="Execute Anonymous Apex"
+                description="Show the Anonymous Apex tool window" icon="/icons/anonymousApex.svg">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt A"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt A" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt A" replace-all="true"/>
+        </action>
+        <action id="SfCloud.SoqlQuery" class="dev.sfcloud.repl.ShowSoqlQueryAction" text="Execute SOQL Query"
+                description="Show the SOQL Query tool window" icon="AllIcons.Nodes.DataSchema">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt Q"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt Q" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt Q" replace-all="true"/>
+        </action>
+        <action id="SfCloud.SoslQuery" class="dev.sfcloud.repl.ShowSoslQueryAction" text="Execute SOSL Query"
+                description="Show the SOSL Query tool window" icon="AllIcons.Actions.Search">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt X"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt X" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt X" replace-all="true"/>
+        </action>
+        <action id="SfCloud.LogAnalyzer" class="dev.sfcloud.log.ViewSalesforceLogsAction" text="View Salesforce Logs"
+                description="Show the Salesforce Log Analyzer tool window" icon="AllIcons.Nodes.LogFolder">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt Z"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt Z" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt Z" replace-all="true"/>
+        </action>
+        <action id="SfCloud.LogAnalyzer.Open" class="dev.sfcloud.log.OpenInLogAnalyzerAction" text="Open in Log Analyzer"
+                description="Open the specified file(s) in the Salesforce Log Analyzer tool window" icon="AllIcons.Nodes.LogFolder"/>
+        <action id="SfCloud.AnonymousApex.Open" class="dev.sfcloud.repl.OpenInAnonymousApexAction" text="Open in Anonymous Apex tool window"
+                description="Opens the current file in the Anonymous Apex tool window" icon="/icons/anonymousApex.svg"/>
+        <action id="SfCloud.AnonymousApex.Execute" class="dev.sfcloud.repl.ExecuteInAnonymousApexAction" text="Execute in Anonymous Apex tool window"
+                description="Opens the current file in the Anonymous Apex tool window and immediately executes it" icon="AllIcons.Actions.Execute"/>
+        <action id="SfCloud.SoqlQuery.Open" class="dev.sfcloud.repl.OpenInSoqlQueryAction" text="Open in SOQL Query tool window"
+                description="Opens the current file in the SOQL Query tool window" icon="AllIcons.Nodes.DataSchema"/>
+        <action id="SfCloud.SoqlQuery.Execute" class="dev.sfcloud.repl.ExecuteInSoqlQueryAction" text="Execute in SOQL Query tool window"
+                description="Opens the current file in the SOQL Query tool window and immediately executes it" icon="AllIcons.Actions.Execute"/>
+        <action id="SfCloud.SoslQuery.Open" class="dev.sfcloud.repl.OpenInSoslQueryAction" text="Open in SOSL Query tool window"
+                description="Opens the current file in the SOSL Query tool window" icon="AllIcons.Actions.Search"/>
+        <action id="SfCloud.SoslQuery.Execute" class="dev.sfcloud.repl.ExecuteInSoslQueryAction" text="Execute in SOSL Query tool window"
+                description="Opens the current file in the SOSL Query tool window and immediately executes it" icon="AllIcons.Actions.Execute"/>
+        <action id="SfCloud.OpenInSetup" class="dev.sfcloud.metadata.OpenInSetupAction" text="Open in Salesforce Setup..."
+                description="Opens the Salesforce setup page for the selected metadata in the browser" icon="AllIcons.General.Web"/>
+        <action id="SfCloud.ShowSetup" class="dev.sfcloud.metadata.ShowSetupAction" text="Show Salesforce Setup..."
+                description="Shows the Salesforce Setup UI in the browser" icon="AllIcons.FileTypes.Config"/>
+        <action id="SfCloud.ShowDeveloperConsole" class="dev.sfcloud.metadata.ShowDeveloperConsoleAction" text="Show Developer Console..."
+                description="Shows the Salesforce Developer Console in the browser" icon="AllIcons.Debugger.Console"/>
+        <action id="SfCloud.AddToForceIgnore" class="dev.sfcloud.metadata.AddToForceIgnoreAction" text="Add to .forceignore"
+                description="Adds the selected files to .forceignore" icon="AllIcons.Vcs.Ignore_file"/>
+        <action id="SfCloud.AddToForceIgnoreNegated" class="dev.sfcloud.metadata.AddToForceIgnoreNegatedAction" text="Add to .forceignore negated"
+                description="Adds the selected files to .forceignore negated" icon="AllIcons.Actions.Checked"/>
+        <action id="SfCloud.OpenOrg" class="dev.sfcloud.org.OpenOrgAction" text="Open Connection"
+                description="Opens the project connection in the browser" icon="AllIcons.General.Web">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt O"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt O" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt O" replace-all="true"/>
+        </action>
+        <action id="SfCloud.LoginOrg" class="dev.sfcloud.org.LoginOrgAction" text="Authorize OAuth Org..."
+                description="Authorize an org with the Salesforce CLI using web login flow" icon="AllIcons.General.User"/>
+        <action id="SfCloud.CreateScratchOrg" class="dev.sfcloud.org.CreateScratchOrgAction" text="Create Scratch Org..."
+                description="Creates a scratch org from a Dev Hub with a definition file" icon="/icons/scratchOrg.svg"/>
+        <action id="SfCloud.DeleteScratchOrg" class="dev.sfcloud.org.DeleteScratchOrgAction" text="Delete Scratch Org..."
+                description="Deletes the scratch org that is the project connection" icon="AllIcons.Actions.GC"/>
+        <action id="SfCloud.RefreshOrgs" class="dev.sfcloud.org.RefreshOrgsAction" text="Refresh Salesforce CLI Connections"
+                description="Reloads the list of Salesforce CLI connections" icon="AllIcons.Actions.Refresh"/>
+        <action id="SfCloud.InstallApexServer" class="dev.sfcloud.lsp.InstallApexServerAction" text="Download Apex Language Server"
+                description="Downloads Salesforce's Apex language server"/>
+        <action id="SfCloud.InstallLwcServer" class="dev.sfcloud.lsp.InstallLwcServerAction" text="Install LWC Language Server"
+                description="Installs the LWC language server with npm"/>
+        <action id="SfCloud.RestartServers" class="dev.sfcloud.lsp.RestartLanguageServersAction" text="Restart Language Servers"
+                description="Restarts the Apex and LWC language servers"/>
+        <action id="SfCloud.GenerateOfflineSymbolTable" class="dev.sfcloud.ost.GenerateOfflineSymbolTableAction"
+                text="Generate Offline Symbol Table..."
+                description="Builds Apex system library and SObject symbols from the project org for offline completion and navigation"
+                icon="AllIcons.Actions.Refresh"/>
+        <action id="SfCloud.UpdateOfflineSymbolTable" class="dev.sfcloud.ost.UpdateOfflineSymbolTableAction"
+                text="Update Offline Symbol Table"
+                description="Re-describes the selected SObjects in the project org and refreshes their offline symbols"
+                icon="AllIcons.Actions.Refresh"/>
+        <action id="SfCloud.OpenSettings" class="dev.sfcloud.org.OpenSettingsAction" text="Configure Project..."
+                description="Opens the SF Cloud project settings" icon="AllIcons.General.GearPlain">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl alt COMMA"/>
+                <keyboard-shortcut keymap="Mac OS X" first-keystroke="shift ctrl alt COMMA" replace-all="true"/>
+                <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="shift ctrl alt COMMA" replace-all="true"/>
+        </action>
+
+        <group id="SfCloud.Menu" text="SF Cloud" popup="true" icon="/icons/toolWindow.svg">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <reference ref="SfCloud.ForceSave"/>
+            <reference ref="SfCloud.ForceValidate"/>
+            <reference ref="SfCloud.DeployModifiedMetadata"/>
+            <reference ref="SfCloud.DeployAllMetadata"/>
+            <reference ref="SfCloud.Retrieve"/>
+            <reference ref="SfCloud.Refresh"/>
+            <reference ref="SfCloud.CompareWithServer"/>
+            <reference ref="SfCloud.CompareWithOtherServer"/>
+            <reference ref="SfCloud.Delete"/>
+            <reference ref="SfCloud.Push"/>
+            <reference ref="SfCloud.Pull"/>
+            <reference ref="SfCloud.ToggleDeployOnSave"/>
+            <separator/>
+            <reference ref="SfCloud.ToggleCoverage"/>
+            <reference ref="SfCloud.ClearCoverage"/>
+            <separator/>
+            <reference ref="SfCloud.OpenInSetup"/>
+            <reference ref="SfCloud.ShowSetup"/>
+            <reference ref="SfCloud.ShowDeveloperConsole"/>
+            <separator/>
+            <reference ref="SfCloud.AddToForceIgnore"/>
+            <reference ref="SfCloud.AddToForceIgnoreNegated"/>
+            <separator/>
+            <reference ref="SfCloud.OpenOrg"/>
+            <reference ref="SfCloud.LoginOrg"/>
+            <reference ref="SfCloud.CreateScratchOrg"/>
+            <reference ref="SfCloud.DeleteScratchOrg"/>
+            <reference ref="SfCloud.RefreshOrgs"/>
+            <separator/>
+            <reference ref="SfCloud.InstallApexServer"/>
+            <reference ref="SfCloud.InstallLwcServer"/>
+            <reference ref="SfCloud.RestartServers"/>
+            <reference ref="SfCloud.GenerateOfflineSymbolTable"/>
+            <separator/>
+            <reference ref="SfCloud.OpenSettings"/>
+        </group>
+
+        <group id="SfCloud.PopupMenu" text="SF Cloud" popup="true" icon="/icons/toolWindow.svg">
+            <reference ref="SfCloud.ForceSave"/>
+            <reference ref="SfCloud.ForceValidate"/>
+            <reference ref="SfCloud.DeployModifiedMetadata"/>
+            <reference ref="SfCloud.DeployAllMetadata"/>
+            <reference ref="SfCloud.Retrieve"/>
+            <reference ref="SfCloud.Refresh"/>
+            <reference ref="SfCloud.CompareWithServer"/>
+            <reference ref="SfCloud.CompareWithOtherServer"/>
+            <reference ref="SfCloud.Delete"/>
+            <reference ref="SfCloud.Push"/>
+            <reference ref="SfCloud.Pull"/>
+            <separator/>
+            <reference ref="SfCloud.AnonymousApex.Open"/>
+            <reference ref="SfCloud.AnonymousApex.Execute"/>
+            <reference ref="SfCloud.SoqlQuery.Open"/>
+            <reference ref="SfCloud.SoqlQuery.Execute"/>
+            <reference ref="SfCloud.SoslQuery.Open"/>
+            <reference ref="SfCloud.SoslQuery.Execute"/>
+            <reference ref="SfCloud.LogAnalyzer.Open"/>
+            <separator/>
+            <reference ref="SfCloud.OpenInSetup"/>
+            <reference ref="SfCloud.ShowSetup"/>
+            <reference ref="SfCloud.ShowDeveloperConsole"/>
+            <separator/>
+            <reference ref="SfCloud.AddToForceIgnore"/>
+            <reference ref="SfCloud.AddToForceIgnoreNegated"/>
+            <separator/>
+            <reference ref="SfCloud.UpdateOfflineSymbolTable"/>
+            <reference ref="SfCloud.GenerateOfflineSymbolTable"/>
+            <separator/>
+            <reference ref="SfCloud.OpenSettings"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorTabPopupMenu" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>

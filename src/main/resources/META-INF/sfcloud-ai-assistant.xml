@@ -1,0 +1,11 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <ml.llm.nextEdits.backend.languageSettingsGroup implementation="dev.sfcloud.ai.SalesforceNextEditLanguages"/>
+        <ml.llm.nextEdits.backend.languageSettingsGroup.affiliation language="Apex"
+                                                                    groupImplementationClass="dev.sfcloud.ai.SalesforceNextEditLanguages"/>
+        <ml.llm.nextEdits.backend.languageSettingsGroup.affiliation language="SOQL"
+                                                                    groupImplementationClass="dev.sfcloud.ai.SalesforceNextEditLanguages"/>
+        <ml.llm.nextEdits.backend.languageSettingsGroup.affiliation language="SOSL"
+                                                                    groupImplementationClass="dev.sfcloud.ai.SalesforceNextEditLanguages"/>
+    </extensions>
+</idea-plugin>

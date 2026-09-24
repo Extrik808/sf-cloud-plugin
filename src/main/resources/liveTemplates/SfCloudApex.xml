@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templateSet group="SF Cloud Apex">
+  <template name="sd" value="System.debug('$END$');" description="System.debug('...')" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="sdv" value="System.debug('$NAME$: ' + $VALUE$);" description="System.debug with a labelled value" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <variable name="VALUE" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="sde" value="System.debug(LoggingLevel.ERROR, '$END$');" description="System.debug at ERROR level" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="soql" value="[SELECT $FIELDS$ FROM $OBJECT$ WHERE $CONDITION$]$END$" description="SOQL query" toReformat="false" toShortenFQNames="false">
+    <variable name="FIELDS" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <variable name="OBJECT" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="CONDITION" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="sosl" value="[FIND '$TEXT$' IN ALL FIELDS RETURNING $OBJECT$($FIELDS$)]$END$" description="SOSL search" toReformat="false" toShortenFQNames="false">
+    <variable name="TEXT" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="OBJECT" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="FIELDS" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="fore" value="for ($TYPE$ $VAR$ : $ITERABLE$) {&#10;    $END$&#10;}" description="for-each loop" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="&quot;SObject&quot;" alwaysStopAt="true"/>
+    <variable name="VAR" expression="" defaultValue="&quot;record&quot;" alwaysStopAt="true"/>
+    <variable name="ITERABLE" expression="completeSmart()" defaultValue="&quot;records&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="forq" value="for ($TYPE$ $VAR$ : [SELECT $FIELDS$ FROM $OBJECT$]) {&#10;    $END$&#10;}" description="for-each over a SOQL query" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="VAR" expression="" defaultValue="&quot;record&quot;" alwaysStopAt="true"/>
+    <variable name="FIELDS" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <variable name="OBJECT" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="fori" value="for (Integer i = 0; i &lt; $LIMIT$; i++) {&#10;    $END$&#10;}" description="indexed for loop" toReformat="true" toShortenFQNames="false">
+    <variable name="LIMIT" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="ifn" value="if ($VALUE$ == null) {&#10;    $END$&#10;}" description="if value is null" toReformat="true" toShortenFQNames="false">
+    <variable name="VALUE" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="ifnn" value="if ($VALUE$ != null) {&#10;    $END$&#10;}" description="if value is not null" toReformat="true" toShortenFQNames="false">
+    <variable name="VALUE" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="ife" value="if ($CONDITION$) {&#10;    $END$&#10;} else {&#10;}" description="if / else" toReformat="true" toShortenFQNames="false">
+    <variable name="CONDITION" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="tryc" value="try {&#10;    $END$&#10;} catch (Exception e) {&#10;    System.debug(LoggingLevel.ERROR, e.getMessage() + ' ' + e.getStackTraceString());&#10;    throw e;&#10;}" description="try / catch" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="list" value="List&lt;$TYPE$&gt; $NAME$ = new List&lt;$TYPE$&gt;();$END$" description="new List" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="&quot;records&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="set" value="Set&lt;$TYPE$&gt; $NAME$ = new Set&lt;$TYPE$&gt;();$END$" description="new Set" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="&quot;ids&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="map" value="Map&lt;$KEY$, $VALUE$&gt; $NAME$ = new Map&lt;$KEY$, $VALUE$&gt;();$END$" description="new Map" toReformat="true" toShortenFQNames="false">
+    <variable name="KEY" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <variable name="VALUE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="&quot;byId&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="mapq" value="Map&lt;Id, $TYPE$&gt; $NAME$ = new Map&lt;Id, $TYPE$&gt;([SELECT $FIELDS$ FROM $OBJECT$]);$END$" description="Map from a SOQL query" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="&quot;byId&quot;" alwaysStopAt="true"/>
+    <variable name="FIELDS" expression="" defaultValue="&quot;Id&quot;" alwaysStopAt="true"/>
+    <variable name="OBJECT" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="psv" value="public static void $NAME$($PARAMS$) {&#10;    $END$&#10;}" description="public static void method" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="PARAMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="prop" value="public $TYPE$ $NAME$ { get; set; }$END$" description="auto property" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="&quot;String&quot;" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="aem" value="@AuraEnabled(cacheable=true)&#10;public static $TYPE$ $NAME$($PARAMS$) {&#10;    $END$&#10;}" description="@AuraEnabled method for LWC" toReformat="true" toShortenFQNames="false">
+    <variable name="TYPE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="PARAMS" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="tm" value="@IsTest&#10;static void $NAME$() {&#10;    $END$&#10;}" description="test method" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="tc" value="@IsTest&#10;private class $NAME$ {&#10;    @IsTest&#10;    static void $METHOD$() {&#10;        $END$&#10;    }&#10;}" description="test class" toReformat="true" toShortenFQNames="false">
+    <variable name="NAME" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="METHOD" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="ae" value="Assert.areEqual($EXPECTED$, $ACTUAL$, '$MESSAGE$');" description="Assert.areEqual" toReformat="true" toShortenFQNames="false">
+    <variable name="EXPECTED" expression="" defaultValue="" alwaysStopAt="true"/>
+    <variable name="ACTUAL" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <variable name="MESSAGE" expression="" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="tss" value="Test.startTest();&#10;$END$&#10;Test.stopTest();" description="Test.startTest / stopTest" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="runas" value="System.runAs($USER$) {&#10;    $END$&#10;}" description="System.runAs" toReformat="true" toShortenFQNames="false">
+    <variable name="USER" expression="completeSmart()" defaultValue="&quot;testUser&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="mock" value="Test.setMock(HttpCalloutMock.class, new $MOCK$());$END$" description="Test.setMock for a callout" toReformat="true" toShortenFQNames="false">
+    <variable name="MOCK" expression="completeSmart()" defaultValue="" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="sav" value="Savepoint sp = Database.setSavepoint();&#10;try {&#10;    $END$&#10;} catch (Exception e) {&#10;    Database.rollback(sp);&#10;    throw e;&#10;}" description="savepoint with rollback" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="dbi" value="Database.insert($RECORDS$, false);$END$" description="Database.insert, partial success" toReformat="true" toShortenFQNames="false">
+    <variable name="RECORDS" expression="completeSmart()" defaultValue="&quot;records&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="dbu" value="Database.update($RECORDS$, false);$END$" description="Database.update, partial success" toReformat="true" toShortenFQNames="false">
+    <variable name="RECORDS" expression="completeSmart()" defaultValue="&quot;records&quot;" alwaysStopAt="true"/>
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+  <template name="ade" value="addError('$END$');" description="SObject.addError" toReformat="true" toShortenFQNames="false">
+    <context>
+      <option name="SF_APEX" value="true"/>
+    </context>
+  </template>
+</templateSet>

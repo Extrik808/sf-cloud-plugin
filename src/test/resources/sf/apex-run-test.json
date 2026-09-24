@@ -1,0 +1,103 @@
+{
+  "status": 100,
+  "result": {
+    "summary": {
+      "failRate": "0%",
+      "failing": 1,
+      "hostname": "https://example.my.salesforce.com",
+      "orgId": "00D000000000000AAA",
+      "outcome": "Failed",
+      "passRate": "100%",
+      "passing": 1,
+      "skipped": 0,
+      "testRunId": "707QL00009VDwPr",
+      "testStartTime": "2026-09-17T15:00:57.000Z",
+      "testsRan": 2,
+      "userId": "005000000000000AAA",
+      "username": "dev@example.com",
+      "commandTime": "240 ms",
+      "testExecutionTime": "430 ms",
+      "testTotalTime": "1493 ms",
+      "orgWideCoverage": "76%",
+      "testRunCoverage": "92%"
+    },
+    "tests": [
+      {
+        "Id": "07MQL00000t9QPR2A2",
+        "QueueItemId": "709QL00000vDnckYAC",
+        "StackTrace": null,
+        "Message": null,
+        "AsyncApexJobId": "707QL00009VDwPrYAL",
+        "MethodName": "aRejectedSaveKeepsTheUserInEditModeAndReportsTheReason",
+        "Outcome": "Pass",
+        "ApexClass": {
+          "Id": "01pQL000016W6xiYAC",
+          "Name": "MyProfilePageControllerTest",
+          "NamespacePrefix": null
+        },
+        "RunTime": 187,
+        "FullName": "MyProfilePageControllerTest.aRejectedSaveKeepsTheUserInEditModeAndReportsTheReason"
+      },
+      {
+        "Id": "07MQL00000t9QPS2A2",
+        "QueueItemId": "709QL00000vDnckYAC",
+        "StackTrace": "Class.MyProfilePageControllerTest.changePasswordRoutesToTheStandardChangePasswordPage: line 42, column 1",
+        "Message": "System.AssertException: Assertion Failed: expected [1], actual [0]",
+        "AsyncApexJobId": "707QL00009VDwPrYAL",
+        "MethodName": "changePasswordRoutesToTheStandardChangePasswordPage",
+        "Outcome": "Fail",
+        "ApexClass": {
+          "Id": "01pQL000016W6xiYAC",
+          "Name": "MyProfilePageControllerTest",
+          "NamespacePrefix": null
+        },
+        "RunTime": 96,
+        "FullName": "MyProfilePageControllerTest.changePasswordRoutesToTheStandardChangePasswordPage"
+      }
+    ],
+    "coverage": {
+      "coverage": [
+        {
+          "id": "01pQL000016W6xhYAC",
+          "name": "MyProfilePageController",
+          "totalLines": 24,
+          "lines": {
+            "8": 1,
+            "10": 1,
+            "11": 1,
+            "14": 1,
+            "15": 1,
+            "18": 1,
+            "20": 1,
+            "21": 0,
+            "25": 1,
+            "26": 1,
+            "29": 1,
+            "30": 1,
+            "33": 1,
+            "34": 1,
+            "35": 1,
+            "36": 0,
+            "37": 1,
+            "38": 1,
+            "42": 1,
+            "43": 1,
+            "46": 1,
+            "47": 1,
+            "48": 1,
+            "51": 1
+          },
+          "totalCovered": 22,
+          "coveredPercent": 92
+        }
+      ],
+      "summary": {
+        "totalLines": 24,
+        "coveredLines": 22,
+        "orgWideCoverage": "76%",
+        "testRunCoverage": "92%"
+      }
+    }
+  },
+  "warnings": []
+}
