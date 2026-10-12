@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import dev.sfcloud.api.SfApi
 import dev.sfcloud.api.SfApiException
+import dev.sfcloud.core.str
 import org.w3c.dom.Element
 import java.io.StringReader
 import java.nio.file.Files
@@ -65,6 +66,8 @@ object MetadataXml {
             isNamespaceAware = true
             setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
             setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            runCatching { setAttribute("jdk.xml.maxGeneralEntitySizeLimit", "0") }
+            runCatching { setAttribute("jdk.xml.totalEntitySizeLimit", "0") }
         }
         return factory.newDocumentBuilder().parse(InputSource(StringReader(xml)))
     }
@@ -100,6 +103,45 @@ object MetadataXml {
             val name = text(types, "name") ?: return@flatMap emptyList()
             children(types, "members").map { ComponentRef(name, it.textContent) }
         }
+    }
+}
+
+data class FolderRecord(val id: String, val name: String, val parentId: String?, val type: String)
+
+object FolderPaths {
+    private val CONTENT_TYPES = mapOf(
+        "Report" to "Report",
+        "Dashboard" to "Dashboard",
+        "Document" to "Document",
+        "Email" to "EmailTemplate",
+        "EmailTemplate" to "EmailTemplate",
+    )
+
+    fun qualify(components: Collection<ServerComponent>, folders: List<FolderRecord>): List<ServerComponent> {
+        val paths = paths(folders)
+        if (paths.isEmpty()) return components.toList()
+        val contentByFolderType = CONTENT_TYPES.values.distinct().associateBy { MetadataApi.folderTypeName(it) }
+        return components.map { component ->
+            val folderOwner = contentByFolderType[component.type]
+            val qualified = when {
+                folderOwner != null -> paths[folderOwner to component.fullName]
+                component.type in contentByFolderType.values && '/' in component.fullName ->
+                    paths[component.type to component.fullName.substringBefore('/')]?.let { "$it/${component.fullName.substringAfter('/')}" }
+                else -> null
+            }
+            if (qualified == null || qualified == component.fullName) component else component.copy(fullName = qualified)
+        }
+    }
+
+    private fun paths(folders: List<FolderRecord>): Map<Pair<String, String>, String> {
+        val byId = folders.associateBy { it.id }
+        val paths = HashMap<Pair<String, String>, String>()
+        folders.forEach { folder ->
+            val type = CONTENT_TYPES[folder.type] ?: return@forEach
+            val chain = generateSequence(folder) { it.parentId?.let(byId::get) }.take(byId.size).map { it.name }.toList().asReversed()
+            paths.putIfAbsent(type to folder.name, chain.joinToString("/"))
+        }
+        return paths
     }
 }
 
@@ -145,10 +187,29 @@ class MetadataApi(private val project: Project) {
                 folders.filter { it.type == folderTypeName(type.xmlName) }.map { type.xmlName to it.fullName as String? }
             }
             submitAll(folderItems.chunked(3)).forEach { it.get() }
-            val visible = components.filter { it.manageableState != "installed" && it.fullName.isNotEmpty() }
+            val qualified = if (folders.isEmpty()) components.toList() else FolderPaths.qualify(components, folderRecords(org, indicator))
+            val visible = qualified.filter { it.manageableState != "installed" && it.fullName.isNotEmpty() }
             return OrgMetadata(org.orEmpty(), System.currentTimeMillis(), types, visible.sortedBy { it.ref })
         } finally {
             pool.shutdownNow()
+        }
+    }
+
+    private fun folderRecords(org: String?, indicator: ProgressIndicator?): List<FolderRecord> {
+        indicator?.text2 = "Resolving folder hierarchy"
+        return try {
+            api.query(org, "SELECT Id, DeveloperName, ParentId, Type FROM Folder WHERE DeveloperName != null", indicator = indicator).records
+                .mapNotNull { record ->
+                    FolderRecord(
+                        id = record.str("Id") ?: return@mapNotNull null,
+                        name = record.str("DeveloperName") ?: return@mapNotNull null,
+                        parentId = record.str("ParentId"),
+                        type = record.str("Type").orEmpty(),
+                    )
+                }
+        } catch (e: SfApiException) {
+            if (e.message == "Cancelled") throw e
+            emptyList()
         }
     }
 

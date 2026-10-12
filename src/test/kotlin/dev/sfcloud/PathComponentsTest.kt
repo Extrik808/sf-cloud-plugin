@@ -25,4 +25,14 @@ class PathComponentsTest : BasePlatformTestCase() {
         assertEquals(ComponentRef("LightningComponentBundle", "badge"), PathComponents.resolve(bundle))
         assertNull(PathComponents.resolve(bundle.parent))
     }
+
+    fun testFolderedFilesResolveToTheirFullFolderPath() {
+        assertEquals(ComponentRef("Report", "Sales/Archive/Pipeline"), resolve("reports/Sales/Archive/Pipeline.report-meta.xml"))
+        assertEquals(ComponentRef("Report", "unfiled\$public/Onboarding"), resolve("reports/unfiled\$public/Onboarding.report-meta.xml"))
+        assertEquals(ComponentRef("ReportFolder", "Sales/Archive"), resolve("reports/Sales/Archive.reportFolder-meta.xml"))
+        assertEquals(ComponentRef("ReportFolder", "Sales"), resolve("reports/Sales.reportFolder-meta.xml"))
+        assertEquals(ComponentRef("Dashboard", "Exec/Weekly"), resolve("dashboards/Exec/Weekly.dashboard-meta.xml"))
+        assertEquals(ComponentRef("EmailTemplate", "Notices/Welcome"), resolve("email/Notices/Welcome.email"))
+        assertNull(resolve("classes/Pipeline.report-meta.xml"))
+    }
 }

@@ -27,6 +27,15 @@ object SfdxProject {
             .mapNotNull { root.findFileByRelativePath(it.trimEnd('/')) }
     }
 
+    fun sourceApiVersion(project: Project): String? {
+        val config = root(project)?.findChild(CONFIG) ?: return null
+        return try {
+            JsonParser.parseString(VfsUtilCore.loadText(config)).asJsonObject.str("sourceApiVersion")
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun isSourceFile(project: Project, file: VirtualFile): Boolean {
         if (file.fileSystem.protocol != "file") return false
         return packageDirectories(project).any { VfsUtilCore.isAncestor(it, file, false) }

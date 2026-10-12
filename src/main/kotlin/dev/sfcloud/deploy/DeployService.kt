@@ -1,5 +1,6 @@
 package dev.sfcloud.deploy
 
+import com.google.gson.JsonObject
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -10,6 +11,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
@@ -72,6 +74,7 @@ data class DeployRequest(
     val ignoreConflicts: Boolean = false,
     val onSave: Boolean = false,
     val tracked: Boolean = false,
+    val bypassForceIgnore: Boolean = false,
 )
 
 interface DeployListener {
@@ -156,7 +159,14 @@ class DeployService(private val project: Project) : Disposable {
         }.queue()
     }
 
-    fun runRetrieve(org: String?, baseArgs: List<String>, operation: String, indicator: ProgressIndicator): SfResult? {
+    fun runRetrieve(
+        org: String?,
+        baseArgs: List<String>,
+        operation: String,
+        indicator: ProgressIndicator,
+        requested: Collection<ComponentRef> = emptyList(),
+        retrieveExcluded: ((List<ComponentRef>) -> Unit)? = null,
+    ): SfResult? {
         val args = baseArgs + OrgService.getInstance(project).orgArgs(org)
         val label = OrgService.getInstance(project).orgLabel(org)
         val started = System.currentTimeMillis()
@@ -188,12 +198,32 @@ class DeployService(private val project: Project) : Disposable {
                     if (paths.size > FILE_LIST_LIMIT) append("<br>… and ${paths.size - FILE_LIST_LIMIT} more")
                 }
             }
-            SfUi.notify(project, GROUP, "$operation Complete", body)
+            val excluded = excludedComponents(requested, files)
+            if (excluded.isEmpty()) {
+                SfUi.notify(project, GROUP, "$operation Complete", body)
+            } else {
+                val warning = body + "<br><br>${excluded.size} requested component(s) were not written to the project, " +
+                    "most likely because they match .forceignore:" +
+                    excluded.take(FILE_LIST_LIMIT).joinToString("") { "<br>• ${StringUtil.escapeXmlEntities(it.member)}" } +
+                    (if (excluded.size > FILE_LIST_LIMIT) "<br>… and ${excluded.size - FILE_LIST_LIMIT} more" else "")
+                val actions = listOfNotNull(
+                    retrieveExcluded?.let { retrieve ->
+                        NotificationAction.createSimpleExpiring("Retrieve Anyway") { retrieve(excluded) }
+                    },
+                )
+                SfNotifier.warn(project, "$operation Incomplete", warning, *actions.toTypedArray())
+            }
         } else {
             val details = failed.take(10).joinToString("<br>") { "${it.str("fullName")}: ${it.str("error").orEmpty()}" }
             SfUi.notify(project, GROUP, "$operation Failed", details.ifEmpty { result.message }, NotificationType.ERROR)
         }
         return result
+    }
+
+    private fun excludedComponents(requested: Collection<ComponentRef>, files: List<JsonObject>): List<ComponentRef> {
+        if (requested.isEmpty()) return emptyList()
+        val returned = files.mapNotNull { file -> file.str("type")?.let { "$it:${file.str("fullName").orEmpty()}".lowercase() } }.toSet()
+        return requested.filter { it.member.lowercase() !in returned }.distinct().sorted()
     }
 
     fun scheduleDeployOnSave(file: VirtualFile) {
@@ -220,10 +250,27 @@ class DeployService(private val project: Project) : Disposable {
     }
 
     private fun runDeploy(request: DeployRequest, indicator: ProgressIndicator) {
+        val staged = if (request.bypassForceIgnore) stage(request.targets) else null
+        try {
+            runDeploy(request, staged, indicator)
+        } finally {
+            staged?.let { FileUtil.delete(it.workspace) }
+        }
+    }
+
+    private fun stage(targets: List<VirtualFile>): StagedDeploy = ForceIgnoreBypass.stage(
+        targets.map { File(it.path) },
+        SfdxProject.packageDirectories(project).map { File(it.path) },
+        FileUtil.createTempDirectory("sf-cloud-forceignored", null, true),
+        SfdxProject.sourceApiVersion(project),
+    )
+
+    private fun runDeploy(request: DeployRequest, staged: StagedDeploy?, indicator: ProgressIndicator) {
         val service = OrgService.getInstance(project)
         val connection = service.orgLabel(request.org)
         val args = mutableListOf("project", "deploy", "start", "--wait", "60")
-        request.targets.forEach { args += listOf("--source-dir", it.path) }
+        val sourceDirs = staged?.sourceDirs?.map { it.path } ?: request.targets.map { it.path }
+        sourceDirs.forEach { args += listOf("--source-dir", it) }
         request.manifest?.let { args += listOf("--manifest", it.path) }
         if (request.ignoreConflicts) args += "--ignore-conflicts"
         if (request.checkOnly) args += "--dry-run"
@@ -236,7 +283,7 @@ class DeployService(private val project: Project) : Disposable {
         indicator.text2 = "Submitting deployment request"
         val started = System.currentTimeMillis()
         val result = try {
-            SfCli.run(project, args, 70 * 60 * 1000, indicator)
+            SfCli.run(project, args, 70 * 60 * 1000, indicator, workDirectory = staged?.workspace)
         } catch (e: SfCliException) {
             SfUi.notify(project, GROUP, "$operation Failed", e.message.orEmpty(), NotificationType.ERROR)
             return
@@ -244,6 +291,7 @@ class DeployService(private val project: Project) : Disposable {
         indicator.text2 = "Retrieving deployment result"
         val payload = result.payload?.takeIf { it.isJsonObject }?.asJsonObject
         val files = payload?.get("files").objects()
+        if (staged != null) files.forEach { file -> file.str("filePath")?.let { file.addProperty("filePath", staged.original(it)) } }
         val failures = files.filter { it.str("state") == "Failed" }
         val deployedPaths = files.mapNotNull { it.str("filePath") }.toSet()
         val orgProblems = problemsByOrg.getOrPut(connection) { ConcurrentHashMap() }
@@ -262,6 +310,11 @@ class DeployService(private val project: Project) : Disposable {
                 val body = "$verb $deployed/$total components to `$connection` in $elapsed with status $status."
                 if (request.onSave) SfUi.edt(project) { WindowManager.getInstance().getStatusBar(project)?.info = body } else SfUi.notify(project, GROUP, "$operation Complete", body)
             }
+            request.targets.isNotEmpty() && !request.bypassForceIgnore && ForceIgnoreBypass.isExcluded(result.message) -> SfNotifier.warn(
+                project, "Nothing to Deploy",
+                "${StringUtil.escapeXmlEntities(request.label)} matches .forceignore, so sf left it out of the deployment package.",
+                NotificationAction.createSimpleExpiring("Deploy Anyway") { submit(request.copy(bypassForceIgnore = true)) },
+            )
             failures.isNotEmpty() || orgProblems.isNotEmpty() -> {
                 val count = failures.size.coerceAtLeast(orgProblems.values.sumOf { it.size })
                 SfUi.notify(

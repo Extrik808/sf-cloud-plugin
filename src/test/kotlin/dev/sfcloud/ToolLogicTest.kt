@@ -13,11 +13,15 @@ import dev.sfcloud.log.LogLevels
 import dev.sfcloud.log.LogTreeView
 import dev.sfcloud.log.SalesforceIdFilter
 import dev.sfcloud.metadata.ComponentRef
+import dev.sfcloud.metadata.FolderPaths
+import dev.sfcloud.metadata.FolderRecord
+import dev.sfcloud.metadata.ServerComponent
 import dev.sfcloud.metadata.MetadataXml
 import dev.sfcloud.org.Connections
 import dev.sfcloud.repl.QueryResultsPanel
 import dev.sfcloud.repl.SoqlText
 import com.google.gson.JsonParser
+import com.intellij.openapi.util.text.StringUtil
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -60,6 +64,18 @@ class ToolLogicTest {
             assertTrue(it, envelope.contains("<apex:category>$it</apex:category><apex:level>Finest</apex:level>"))
         }
         assertFalse(envelope.contains("Data"))
+    }
+
+    @Test
+    fun anonymousApexParsesLogsLargerThanJdkEntityLimit() {
+        val log = "USER_DEBUG|[1]|DEBUG|<x> ".repeat(100_000)
+        val xml = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns=\"http://soap.sforce.com/2006/08/apex\">" +
+            "<soapenv:Header><DebuggingInfo><debugLog>${StringUtil.escapeXmlEntities(log)}</debugLog></DebuggingInfo></soapenv:Header>" +
+            "<soapenv:Body><executeAnonymousResponse><result><compiled>true</compiled><success>true</success></result></executeAnonymousResponse></soapenv:Body>" +
+            "</soapenv:Envelope>"
+        val result = AnonymousApexExecutor.parse(xml)
+        assertTrue(result.success)
+        assertEquals(log, result.log)
     }
 
     @Test
@@ -175,5 +191,52 @@ class ToolLogicTest {
         assertFalse("A 16-character value is not an Id", SalesforceIdFilter.isRecordId("0015g00000AbCdEA"))
         assertFalse("A number is not an Id", SalesforceIdFilter.isRecordId("100000000000000"))
         assertFalse(SalesforceIdFilter.isRecordId(null))
+    }
+
+    @Test
+    fun folderPathsQualifyNestedFoldersAndTheirContents() {
+        fun component(type: String, fullName: String) = ServerComponent(type, fullName, null, null, null, null)
+        val folders = listOf(
+            FolderRecord("00l1", "Sales", null, "Report"),
+            FolderRecord("00l2", "Archive", "00l1", "Report"),
+            FolderRecord("00l3", "Deep", "00l2", "Report"),
+            FolderRecord("00l4", "Archive", null, "Dashboard"),
+        )
+        val qualified = FolderPaths.qualify(
+            listOf(
+                component("ReportFolder", "Sales"),
+                component("ReportFolder", "Archive"),
+                component("ReportFolder", "Deep"),
+                component("Report", "Archive/Pipeline"),
+                component("Report", "Deep/Old"),
+                component("Report", "unfiled\$public/Onboarding"),
+                component("DashboardFolder", "Archive"),
+                component("Dashboard", "Archive/Weekly"),
+                component("ApexClass", "Archive"),
+            ),
+            folders,
+        ).map { "${it.type}:${it.fullName}" }
+        assertEquals(
+            listOf(
+                "ReportFolder:Sales",
+                "ReportFolder:Sales/Archive",
+                "ReportFolder:Sales/Archive/Deep",
+                "Report:Sales/Archive/Pipeline",
+                "Report:Sales/Archive/Deep/Old",
+                "Report:unfiled\$public/Onboarding",
+                "DashboardFolder:Archive",
+                "Dashboard:Archive/Weekly",
+                "ApexClass:Archive",
+            ),
+            qualified,
+        )
+    }
+
+    @Test
+    fun folderPathsSurviveParentCycles() {
+        val folders = listOf(FolderRecord("a", "A", "b", "Report"), FolderRecord("b", "B", "a", "Report"))
+        val qualified = FolderPaths.qualify(listOf(ServerComponent("ReportFolder", "A", null, null, null, null)), folders)
+        assertEquals(1, qualified.size)
+        assertTrue(qualified.single().fullName.endsWith("A"))
     }
 }

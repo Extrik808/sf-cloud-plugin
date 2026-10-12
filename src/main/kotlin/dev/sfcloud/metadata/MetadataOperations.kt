@@ -78,6 +78,14 @@ object PathComponents {
         "customPermission" to "CustomPermission",
         "object" to "CustomObject",
     )
+    private val FOLDERED = mapOf(
+        "report" to ("Report" to "reports"),
+        "reportFolder" to ("ReportFolder" to "reports"),
+        "dashboard" to ("Dashboard" to "dashboards"),
+        "dashboardFolder" to ("DashboardFolder" to "dashboards"),
+        "email" to ("EmailTemplate" to "email"),
+        "emailFolder" to ("EmailFolder" to "email"),
+    )
     private val CHILDREN = LocalFiles.CHILD_DIRECTORIES.entries.associate { (type, folder) -> folder to type }
     private val CHILD_SUFFIXES = mapOf(
         "fields" to "field",
@@ -111,6 +119,11 @@ object PathComponents {
             if (extension != CHILD_SUFFIXES[parent.name]) return null
             return ComponentRef(type, "${owner.name}.$base")
         }
+        FOLDERED[extension]?.let { (type, directory) ->
+            val folders = generateSequence(parent) { it.parent }.takeWhile { it.name != directory }.toList()
+            if (folders.lastOrNull()?.parent?.name != directory && parent.name != directory) return null
+            return ComponentRef(type, (folders.asReversed().map { it.name } + base).joinToString("/"))
+        }
         if (extension == "resource" || parent.name == "staticresources") return ComponentRef("StaticResource", name.substringBefore('.'))
         val type = SUFFIXES[extension] ?: return null
         if (!file.name.endsWith("-meta.xml")) return null
@@ -142,10 +155,60 @@ class MetadataOperations(private val project: Project) {
         try {
             val args = mutableListOf("project", "retrieve", "start", "--wait", "60", "--manifest", manifest.path)
             if (outputDir != null) args += listOf("--output-dir", outputDir)
-            DeployService.getInstance(project).runRetrieve(org, args, "Retrieve", indicator)
+            DeployService.getInstance(project).runRetrieve(org, args, "Retrieve", indicator, refs) { excluded ->
+                retrieveExcluded(org, excluded, outputDir)
+            }
         } finally {
             FileUtil.delete(manifest.parentFile)
         }
+    }
+
+    fun retrieveExcluded(org: String?, refs: List<ComponentRef>, outputDir: String?) {
+        if (refs.isEmpty()) return
+        val connection = service.orgLabel(org)
+        object : Task.Backgroundable(project, "Retrieving metadata excluded by .forceignore from '$connection'", true) {
+            override fun run(indicator: ProgressIndicator) {
+                val target = outputDir?.let(::File) ?: SfdxProject.packageDirectories(project).firstOrNull()?.let { File(it.path) }
+                if (target == null) {
+                    SfUi.notify(project, DeployService.GROUP, "Retrieve Failed", "No package directory to retrieve into.", NotificationType.ERROR)
+                    return
+                }
+                val workspace = FileUtil.createTempDirectory("sf-cloud-excluded", null, true)
+                try {
+                    indicator.text2 = "Creating retrieve request"
+                    val version = apiVersion(org, indicator)
+                    File(workspace, "sfdx-project.json").writeText(
+                        """{"packageDirectories":[{"path":"$EXCLUDED_SOURCE","default":true}],"sourceApiVersion":"$version"}""",
+                    )
+                    val manifest = File(workspace, "package.xml").apply { writeText(MetadataXml.packageXml(refs, version)) }
+                    indicator.text2 = "Submitting retrieve request"
+                    val args = listOf("project", "retrieve", "start", "--wait", "60", "--manifest", manifest.path) + service.orgArgs(org)
+                    val result = SfCli.run(project, args, 70 * 60 * 1000, indicator, workDirectory = workspace)
+                    if (!result.success) {
+                        SfUi.notify(project, DeployService.GROUP, "Retrieve Failed", result.message, NotificationType.ERROR)
+                        return
+                    }
+                    indicator.text2 = "Copying retrieved files into the project"
+                    val source = File(workspace, EXCLUDED_SOURCE)
+                    val copied = source.walkTopDown().filter { it.isFile }.map { file ->
+                        File(target, FileUtil.getRelativePath(source, file) ?: file.name).also { FileUtil.copy(file, it) }
+                    }.toList()
+                    copied.mapNotNull { LocalFileSystem.getInstance().refreshAndFindFileByIoFile(it) }
+                        .let { if (it.isNotEmpty()) VfsUtil.markDirtyAndRefresh(false, false, false, *it.toTypedArray()) }
+                    val body = if (copied.isEmpty()) {
+                        "Nothing was retrieved from '$connection'."
+                    } else {
+                        "Wrote ${copied.size} file(s) into `${target.name}`: ${names(copied.map { it.name })}" +
+                            "<br>They stay excluded from deploy and retrieve while .forceignore matches them."
+                    }
+                    SfUi.notify(project, DeployService.GROUP, "Retrieve Complete", body)
+                } catch (e: SfCliException) {
+                    SfUi.notify(project, DeployService.GROUP, "Retrieve Failed", e.message.orEmpty(), NotificationType.ERROR)
+                } finally {
+                    FileUtil.delete(workspace)
+                }
+            }
+        }.queue()
     }
 
     fun retrieveForMerge(org: String?, refs: List<ComponentRef>) {
@@ -349,12 +412,15 @@ class MetadataOperations(private val project: Project) {
     }
 
     private fun manifest(org: String?, refs: List<ComponentRef>, indicator: ProgressIndicator): File {
-        val version = runCatching { SfApi.getInstance(project).session(org, indicator).apiVersion }.getOrDefault(SfApi.DEFAULT_API_VERSION)
+        val version = apiVersion(org, indicator)
         val dir = FileUtil.createTempDirectory("sf-cloud-manifest", null, true)
         val file = File(dir, "package.xml")
         file.writeText(MetadataXml.packageXml(refs, version))
         return file
     }
+
+    private fun apiVersion(org: String?, indicator: ProgressIndicator): String =
+        runCatching { SfApi.getInstance(project).session(org, indicator).apiVersion }.getOrDefault(SfApi.DEFAULT_API_VERSION)
 
     private fun pairUp(output: File): List<RetrievedFile> {
         val index = HashMap<String, VirtualFile>()
@@ -403,6 +469,7 @@ class MetadataOperations(private val project: Project) {
     companion object {
         private const val DEFAULT_LAYOUT = "main/default/"
         private const val META_SUFFIX = "-meta.xml"
+        private const val EXCLUDED_SOURCE = "force-app"
 
         fun normalize(relative: String): String = relative.removePrefix(DEFAULT_LAYOUT)
 

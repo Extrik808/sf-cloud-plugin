@@ -50,7 +50,12 @@ object SfCli {
         return "sf"
     }
 
-    fun commandLine(project: Project?, args: List<String>, environment: Map<String, String> = emptyMap()): GeneralCommandLine =
+    fun commandLine(
+        project: Project?,
+        args: List<String>,
+        environment: Map<String, String> = emptyMap(),
+        workDirectory: File? = null,
+    ): GeneralCommandLine =
         GeneralCommandLine(listOf(executable()) + args)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
             .withCharset(StandardCharsets.UTF_8)
@@ -63,7 +68,10 @@ object SfCli {
                     "SF_DISABLE_TELEMETRY" to "true",
                 ) + environment,
             )
-            .apply { project?.guessProjectDir()?.path?.takeIf { File(it).isDirectory }?.let { withWorkDirectory(it) } }
+            .apply {
+                val directory = workDirectory?.path ?: project?.guessProjectDir()?.path
+                directory?.takeIf { File(it).isDirectory }?.let { withWorkDirectory(it) }
+            }
 
     fun run(
         project: Project?,
@@ -71,10 +79,11 @@ object SfCli {
         timeoutMs: Int = 10 * 60 * 1000,
         indicator: ProgressIndicator? = null,
         environment: Map<String, String> = emptyMap(),
+        workDirectory: File? = null,
     ): SfResult {
         val fullArgs = if ("--json" in args) args else args + "--json"
         val handler = try {
-            CapturingProcessHandler(commandLine(project, fullArgs, environment))
+            CapturingProcessHandler(commandLine(project, fullArgs, environment, workDirectory))
         } catch (e: Exception) {
             throw SfCliException("Cannot start Salesforce CLI (${executable()}): ${e.message}. Set the path in Settings | Tools | SF Cloud.")
         }

@@ -59,6 +59,8 @@ class AnonymousApexExecutor(private val project: Project) {
                 isNamespaceAware = true
                 setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
                 setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+                runCatching { setAttribute("jdk.xml.maxGeneralEntitySizeLimit", "0") }
+                runCatching { setAttribute("jdk.xml.totalEntitySizeLimit", "0") }
             }
             val document = factory.newDocumentBuilder().parse(InputSource(StringReader(xml)))
             val result = document.getElementsByTagNameNS("*", "result").item(0) as? Element
